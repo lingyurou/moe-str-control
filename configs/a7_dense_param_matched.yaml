@@ -1,0 +1,35 @@
+# A7a: parameter-matched dense FFN control -- the most important control in the paper.
+# It answers whether a reported gain comes from routing or merely from having a wider FFN:
+#   4 experts x d_ff 1024  ==  one dense d_ff 4096 (matched parameter count)
+# If this config matches a1_svtr, the MoE claim has to be restated.
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.0           # with a single expert the auxiliary loss is constant, so no gradient value
+  amp: true
+  workers: 8
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a7_dense_param_matched
+
+model:
+  backbone: svtr
+  routing: dense
+  num_experts: 1
+  d_ff: 4096
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  val_root: data/data_lmdb_release/evaluation/IIIT5k_3000
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true

@@ -1,0 +1,40 @@
+# A1: main configuration (paper, Appendix A.3 item 1).
+# Changes relative to the earlier toy setup:
+#   - backbone: svtr (~1.4 M parameters) instead of a 3-layer convolutional stand-in
+#   - aug: strong (perspective/affine/colour/blur); there was no augmentation before
+#   - fixed seed, so the three seeds are comparable
+#   - quick validation on IIIT5k every 2 epochs
+# NOTE: this run selected its checkpoint on IIIT5k, which is also a test set. The bias
+# that introduces is measured and disclosed in the paper (Section 4.3); A1v3 replaced the
+# selection set with a held-out slice of MJ for exactly this reason.
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.01          # load-balancing coefficient
+  amp: true
+  workers: 8
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a1_svtr
+
+model:
+  backbone: svtr
+  routing: dense       # dense = soft weighting over all experts (the paper's default); top1/top2 = A3
+  num_experts: 4
+  d_ff: 1024
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  val_root: data/data_lmdb_release/evaluation/IIIT5k_3000
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true      # case-insensitive is the main metric; see test.py for case-sensitive

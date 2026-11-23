@@ -1,0 +1,40 @@
+# A3-top1, clean rerun.
+# The first attempt was stopped by hand on 2026-11-01 13:58: with ~5 GB of RAM left and two
+# jobs running 8 persistent workers each (worker memory grows every epoch), an OOM was
+# imminent, and A1 -- 7 epochs from finishing -- was worth more than episode 7 of A3. The
+# worker leak was fixed in train.py (persistent_workers=False plus MALLOC_ARENA_MAX=2), and
+# this rerun uses 4 workers.
+#
+# A3-top1: hard top-1 routing. One expert per token, 1/4 of the dense expert arithmetic,
+# unchanged parameter count, `routing` the only field that differs from A1.
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.01          # the auxiliary loss only matters under sparse routing; it is constant for dense
+  amp: true
+  workers: 4
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a3_top1_rerun
+
+model:
+  backbone: svtr
+  routing: top1
+  num_experts: 4
+  d_ff: 1024
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  val_root: data/data_lmdb_release/evaluation/IIIT5k_3000
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true

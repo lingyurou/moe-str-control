@@ -1,0 +1,42 @@
+# A7a, clean rerun (parameter-matched dense control, 1 x 4096).
+# The first run was killed at epoch 17 on 2026-11-01 01:57 by the system OOM killer
+# (journalctl: gmoest-a7-full.service: Failed with result 'oom-kill'). Its last.pth holds
+# model weights only -- no optimiser, scheduler or epoch counter -- so resuming would have
+# meant a different schedule and the run would no longer be comparable to A1's 30 epochs.
+# Restarted from scratch.
+#
+# Only difference from a7_dense_param_matched.yaml: workers 8 -> 4, to lower memory pressure.
+# Worker count only shifts how augmentation randomness is distributed across workers, not the
+# expected training distribution. Model and hyper-parameters are unchanged: 1 x 4096 dense,
+# seed 42, within 0.05 % of A1's parameter count and with the same expert arithmetic.
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.0
+  amp: true
+  workers: 4
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a7a_rerun
+
+model:
+  backbone: svtr
+  routing: dense
+  num_experts: 1
+  d_ff: 4096
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  val_root: data/data_lmdb_release/evaluation/IIIT5k_3000
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true

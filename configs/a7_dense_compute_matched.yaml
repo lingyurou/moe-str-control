@@ -1,0 +1,38 @@
+# A7b: arithmetic-matched dense FFN control (same forward cost per token as one expert).
+# One expert x d_ff 1024 matches the cost of a single expert inside the mixture, but with no
+# routing at all. Read together with A7a:
+#   A7b  = fewer parameters, same arithmetic   -> tests capacity
+#   A7a  = same parameters, more arithmetic    -> tests total capacity
+#   A1   = A7a's parameters with A7b's arithmetic -> the net effect of the mixture
+# Only the three together separate "conditional computation from routing" from "a bigger FFN".
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.0
+  amp: true
+  workers: 4   # 8 -> 4: A7a was OOM-killed on 2026-11-01 with two jobs at 8 workers each
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a7_dense_compute_matched
+
+model:
+  backbone: svtr
+  routing: dense
+  num_experts: 1
+  d_ff: 1024
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  val_root: data/data_lmdb_release/evaluation/IIIT5k_3000
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true

@@ -1,0 +1,51 @@
+# A1v2: re-weighted data distribution (abandoned intermediate, kept for the audit trail).
+# Differs from a1_svtr.yaml (A1) only in the data block; model and optimisation are identical,
+# so A1v2 vs A1 isolates the effect of the sampler.
+#
+# Motivated by the 2026-11-02 error analysis:
+#   1. digits are ~1.67 % of training but ~8 % of IIIT5k -> digit accuracy 68.8 %
+#   2. labels longer than 12 symbols are ~2.6 % of training -> 13+ char accuracy 14.3 %
+#   3. the original val_root was IIIT5k itself (selection on a test set)
+#      -> selection moved to a 50 k sample of MJ_valid, IIIT5k demoted to a monitor
+#
+# v2 oversampled too aggressively (x6); it was stopped after 3 epochs and replaced by a1_v3.yaml.
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 192
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  alpha: 0.01
+  amp: true
+  # 4 workers rather than 8: this run shared the machine with A7a, and 8 persistent workers
+  # per job exhausted RAM. LMDB throughput is unchanged between 4 and 24 workers.
+  workers: 4
+  val_every: 2
+  deterministic: true
+  out_dir: checkpoints/a1_v2
+
+model:
+  backbone: svtr
+  routing: dense
+  num_experts: 4
+  d_ff: 1024
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dropout: 0.1
+
+data:
+  train_root: data/data_lmdb_release/training
+  # selection set: synthetic domain, zero overlap with the ten benchmarks, 50 k fixed sample
+  val_root: data/data_lmdb_release/training/MJ/MJ_valid
+  val_max_samples: 50000
+  # monitor set: IIIT5k is printed for the trend but never drives checkpoint selection
+  val_extra_roots:
+    - data/data_lmdb_release/evaluation/IIIT5k_3000
+  # per-sample weights, built by tools/build_sample_weights.py
+  sample_weights: data/sample_weights_v2.npy
+  img_h: 32
+  img_w: 100
+  aug: strong
+  lowercase: true

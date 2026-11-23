@@ -1,0 +1,7 @@
+# DDP settings for two V100s (legacy: the paper's runs are single-GPU)
+dist_backend: "nccl"
+mixed_precision: true   # FP16 to use the V100 tensor cores
+
+train:
+  batch_size: 128        # 128 per GPU, 256 effective
+  lr: 0.001              # linear scaling rule
